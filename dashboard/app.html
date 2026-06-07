@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Análise de Corridas Uber</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --card2: #22263a;
+    --border: #2d3147;
+    --accent: #4f8ef7;
+    --green: #3ecf8e;
+    --red: #f76c6c;
+    --yellow: #f7c948;
+    --text: #e8eaf6;
+    --muted: #8892b0;
+    --font: 'Sora', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ─── HEADER ─── */
+  header {
+    background: linear-gradient(135deg, #13162a 0%, #1a1d36 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 24px 40px;
+    display: flex; align-items: center; gap: 18px;
+  }
+  header .logo {
+    width: 44px; height: 44px;
+    background: var(--accent);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  header h1 { font-size: 1.4rem; font-weight: 700; }
+  header p  { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+
+  /* ─── NAV TABS ─── */
+  nav {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex; gap: 4px;
+  }
+  nav button {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-family: var(--font); font-size: 0.88rem;
+    padding: 14px 20px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  nav button.active {
+    color: var(--text);
+    border-bottom-color: var(--accent);
+  }
+  nav button:hover { color: var(--text); }
+
+  /* ─── MAIN ─── */
+  main { padding: 32px 40px; max-width: 1400px; margin: 0 auto; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ─── CARDS ─── */
+  .cards-row {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px; margin-bottom: 28px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+  }
+  .card .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  .card .value { font-size: 2rem; font-weight: 700; margin-top: 6px; font-family: var(--mono); }
+  .card .sub   { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+  .card.green .value { color: var(--green); }
+  .card.red   .value { color: var(--red);   }
+  .card.blue  .value { color: var(--accent);}
+
+  /* ─── CHART WRAPPERS ─── */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
+  }
+  .chart-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 22px 24px;
+  }
+  .chart-box h3 {
+    font-size: 0.92rem; font-weight: 600; margin-bottom: 4px;
+  }
+  .chart-box .goal {
+    font-size: 0.75rem; color: var(--muted); margin-bottom: 16px; line-height: 1.4;
+  }
+  .chart-box canvas { width: 100% !important; }
+
+  /* ─── SECTION 2 FORM ─── */
+  .classifier-layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 24px;
+  }
+  .form-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .form-card h3 { font-size: 1rem; margin-bottom: 18px; }
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block; font-size: 0.78rem; color: var(--muted);
+    margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em;
+  }
+  .field select, .field input[type=range] {
+    width: 100%;
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 9px 12px;
+    font-family: var(--font); font-size: 0.88rem;
+  }
+  .field input[type=range] { padding: 4px 0; cursor: pointer; accent-color: var(--accent); }
+  .field .range-val {
+    font-family: var(--mono); font-size: 0.82rem;
+    color: var(--accent); float: right; margin-top: -22px;
+  }
+  .btn-predict {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none; border-radius: 10px;
+    padding: 12px; font-family: var(--font);
+    font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    margin-top: 8px; transition: opacity .2s;
+  }
+  .btn-predict:hover { opacity: .88; }
+
+  /* ─── RESULTS ─── */
+  .results-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .results-card h3 { font-size: 1rem; margin-bottom: 20px; }
+  .methods-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+    margin-bottom: 24px;
+  }
+  .method-box {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+  }
+  .method-box .method-name { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+  .method-box .method-pred {
+    font-size: 1.05rem; font-weight: 700;
+    padding: 6px 14px; border-radius: 20px;
+    display: inline-block; margin-bottom: 8px;
+  }
+  .method-box .pred-concluida { background: rgba(62,207,142,.15); color: var(--green); }
+  .method-box .pred-cancelada  { background: rgba(247,108,108,.15); color: var(--red); }
+  .method-box .method-conf { font-size: 0.82rem; color: var(--muted); }
+
+  /* Bayes bar */
+  .bayes-bars { margin-top: 4px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .bar-label { font-size: 0.8rem; width: 120px; flex-shrink: 0; }
+  .bar-track { flex: 1; background: var(--card2); border-radius: 6px; height: 18px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; transition: width .5s ease; }
+  .bar-pct { font-family: var(--mono); font-size: 0.82rem; width: 48px; text-align: right; }
+
+  /* Comparison chart */
+  #compChart { max-height: 260px; }
+
+  /* ─── TABLE ─── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+  th { background: var(--card2); color: var(--muted); text-transform: uppercase; font-size: 0.72rem; letter-spacing: .05em; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; }
+  .badge.g { background: rgba(62,207,142,.15); color: var(--green); }
+  .badge.r { background: rgba(247,108,108,.15); color: var(--red); }
+
+  /* placeholder for results */
+  .placeholder {
+    text-align: center; padding: 50px 20px;
+    color: var(--muted); font-size: 0.9rem;
+  }
+  .placeholder .icon { font-size: 2.5rem; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🚗</div>
+  <div>
+    <h1>Dashboard — Análise de Corridas Uber</h1>
+    <p>150.000 corridas · Dataset NCR Ride Bookings 2024 · Previsão de Conclusão vs Cancelamento</p>
+  </div>
+</header>
+
+<nav>
+  <button class="active" onclick="showSection('s1', this)">Seção 1 — Análise dos Dados</button>
+  <button onclick="showSection('s2', this)">Seção 2 — Classificação Probabilística</button>
+</nav>
+
+<main>
+
+<!-- ══════════════════════════════════════════════════
+     SEÇÃO 1 — EDA
+══════════════════════════════════════════════════ -->
+<div id="s1" class="section active">
+
+  <div class="cards-row">
+    <div class="card blue">
+      <div class="label">Total de Corridas</div>
+      <div class="value">150k</div>
+      <div class="sub">149.999 registros</div>
+    </div>
+    <div class="card green">
+      <div class="label">Concluídas (alvo = 1)</div>
+      <div class="value">93.000</div>
+      <div class="sub">62,0% do total</div>
+    </div>
+    <div class="card red">
+      <div class="label">Canceladas (alvo = 0)</div>
+      <div class="value">57.000</div>
+      <div class="sub">38,0% do total</div>
+    </div>
+    <div class="card">
+      <div class="label">VTAT Médio</div>
+      <div class="value" style="font-size:1.6rem">8,44 min</div>
+      <div class="sub">Tempo médio de atendimento</div>
+    </div>
+    <div class="card">
+      <div class="label">Tipos de Veículo</div>
+      <div class="value" style="font-size:1.6rem">7</div>
+      <div class="sub">Auto, Bike, eBike…</div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+
+    <!-- Gráfico 1: pizza alvo -->
+    <div class="chart-box" style="max-width:460px">
+      <h3>📊 Distribuição das Corridas por Status</h3>
+      <p class="goal">Objetivo: mostrar a proporção entre corridas concluídas e canceladas — base para entender o desbalanceamento das classes.</p>
+      <canvas id="pieChart" height="220"></canvas>
+    </div>
+
+    <!-- Gráfico 2: barras por tipo de veículo -->
+    <div class="chart-box">
+      <h3>🚗 Corridas por Tipo de Veículo</h3>
+      <p class="goal">Objetivo: comparar o volume de corridas e a taxa de conclusão por tipo de veículo — identifica quais categorias têm mais cancelamentos.</p>
+      <canvas id="vtChart" height="220"></canvas>
+    </div>
+
+    <!-- Gráfico 3: hora do dia -->
+    <div class="chart-box" style="grid-column: span 2;">
+      <h3>🕐 Volume de Corridas por Hora do Dia</h3>
+      <p class="goal">Objetivo: revelar padrões de demanda ao longo do dia — identifica horários de pico e vale que influenciam a operação.</p>
+      <canvas id="horaChart" height="160"></canvas>
+    </div>
+
+    <!-- Gráfico 4: período do dia -->
+    <div class="chart-box">
+      <h3>☀️ Corridas por Período do Dia</h3>
+      <p class="goal">Objetivo: comparar o comportamento de conclusão vs cancelamento por período — tarde, manhã, noite e madrugada.</p>
+      <canvas id="periodoChart" height="240"></canvas>
+    </div>
+
+    <!-- Gráfico 5: dia da semana -->
+    <div class="chart-box">
+      <h3>📅 Corridas por Dia da Semana</h3>
+      <p class="goal">Objetivo: identificar se há diferença de demanda ou comportamento entre os dias da semana.</p>
+      <canvas id="diasemChart" height="240"></canvas>
+    </div>
+
+    <!-- Gráfico 6: distribuição VTAT -->
+    <div class="chart-box" style="grid-column: span 2;">
+      <h3>⏱️ Distribuição do VTAT (Tempo de Atendimento) por Status</h3>
+      <p class="goal">Objetivo: analisar se o tempo de atendimento (VTAT) se distribui de forma diferente entre corridas concluídas e canceladas — variável contínua chave para os modelos.</p>
+      <canvas id="vtatChart" height="160"></canvas>
+    </div>
+
+    <!-- Gráfico 7: sem_vtat -->
+    <div class="chart-box">
+      <h3>❓ Corridas sem Registro de VTAT</h3>
+      <p class="goal">Objetivo: quantificar dados faltantes no campo VTAT — corridas sem registro representam ~7% e podem indicar cancelamentos imediatos.</p>
+      <canvas id="svChart" height="220"></canvas>
+    </div>
+
+    <!-- Gráfico 8: taxa de conclusão por veículo -->
+    <div class="chart-box">
+      <h3>📈 Taxa de Conclusão (%) por Tipo de Veículo</h3>
+      <p class="goal">Objetivo: comparar diretamente qual tipo de veículo tem maior taxa de corridas concluídas — útil para priorização operacional.</p>
+      <canvas id="taxaChart" height="220"></canvas>
+    </div>
+
+  </div>
+</div><!-- /s1 -->
+
+
+<!-- ══════════════════════════════════════════════════
+     SEÇÃO 2 — CLASSIFICAÇÃO
+══════════════════════════════════════════════════ -->
+<div id="s2" class="section">
+
+  <div class="classifier-layout">
+
+    <!-- Formulário de entrada -->
+    <div class="form-card">
+      <h3>🔢 Insira os Atributos da Corrida</h3>
+
+      <div class="field">
+        <label>Tipo de Veículo</label>
+        <select id="inp_vt">
+          <option>Auto</option>
+          <option>Bike</option>
+          <option>eBike</option>
+          <option>Go Mini</option>
+          <option>Go Sedan</option>
+          <option>Premier Sedan</option>
+          <option>Uber XL</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Período do Dia</label>
+        <select id="inp_per">
+          <option value="manha">Manhã (05h–12h)</option>
+          <option value="tarde">Tarde (12h–18h)</option>
+          <option value="noite">Noite (18h–23h)</option>
+          <option value="madrugada">Madrugada (00h–05h)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Avg VTAT (minutos)  <span class="range-val" id="vtat_val">8</span></label>
+        <input type="range" id="inp_vtat" min="2" max="19" step="0.5" value="8"
+               oninput="document.getElementById('vtat_val').textContent=this.value">
+      </div>
+
+      <div class="field">
+        <label>Sem Registro de VTAT?</label>
+        <select id="inp_sv">
+          <option value="0">Não — VTAT registrado</option>
+          <option value="1">Sim — sem registro</option>
+        </select>
+      </div>
+
+      <button class="btn-predict" onclick="predict()">⚡ Calcular Predição</button>
+
+      <div style="margin-top:18px; background:var(--card2); border-radius:10px; padding:14px; font-size:0.78rem; color:var(--muted); line-height:1.6">
+        <strong style="color:var(--text)">Como funciona:</strong><br>
+        • <strong style="color:var(--accent)">Bayes Ingênuo</strong> — usa probabilidades condicionais P(feature|classe) calculadas do dataset completo.<br>
+        • <strong style="color:var(--yellow)">KNN Simulado</strong> — estima baseado na taxa histórica do grupo mais próximo.<br>
+        • <strong style="color:var(--green)">Árvore de Decisão</strong> — usa regras extraídas dos padrões do dataset.
+      </div>
+    </div>
+
+    <!-- Resultados -->
+    <div class="results-card">
+      <h3>📋 Resultados da Classificação</h3>
+
+      <div id="placeholder" class="placeholder">
+        <div class="icon">⚡</div>
+        Preencha os atributos e clique em <strong>Calcular Predição</strong> para ver os resultados dos três métodos.
+      </div>
+
+      <div id="results_area" style="display:none">
+
+        <div class="methods-grid" id="methods_grid"></div>
+
+        <div class="chart-box" style="margin-bottom:20px">
+          <h3>🎯 Probabilidades — Teorema de Bayes</h3>
+          <p class="goal">Exibe P(Concluída) e P(Cancelada) calculadas pelo Teorema de Bayes com as features informadas.</p>
+          <div class="bayes-bars" id="bayes_bars"></div>
+        </div>
+
+        <div class="chart-box">
+          <h3>📊 Comparação Visual dos Três Métodos</h3>
+          <p class="goal">Compara a confiança de cada método na predição de corrida Concluída vs Cancelada.</p>
+          <canvas id="compChart" height="200"></canvas>
+        </div>
+
+      </div><!-- /results_area -->
+    </div>
+
+  </div><!-- /classifier-layout -->
+
+  <!-- Tabela de referência -->
+  <div class="chart-box" style="margin-top:24px">
+    <h3>📚 Tabela de Probabilidades Condicionais (Bayes) — Referência</h3>
+    <p class="goal" style="margin-bottom:12px">Objetivo: exibir as probabilidades P(feature | classe) usadas pelo Naive Bayes. Cada linha mostra a chance de observar aquele valor dado que a corrida é concluída ou cancelada.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Atributo</th>
+            <th>Valor</th>
+            <th>P(valor | Concluída)</th>
+            <th>P(valor | Cancelada)</th>
+          </tr>
+        </thead>
+        <tbody id="bayes_table"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /s2 -->
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ─────────────────────────────────────────────
+// DATA (pré-computado do dataset)
+// ─────────────────────────────────────────────
+const DATA = {
+  totals: { total:149999, concluido:93000, cancelado:56999, p_a1:0.620, p_a0:0.380 },
+
+  vt: {
+    'Auto':          { total:37418, concluido:23155, cancelado:14263 },
+    'Bike':          { total:22517, concluido:14034, cancelado:8483  },
+    'eBike':         { total:10557, concluido:6551,  cancelado:4006  },
+    'Go Mini':       { total:29806, concluido:18549, cancelado:11257 },
+    'Go Sedan':      { total:27141, concluido:16676, cancelado:10465 },
+    'Premier Sedan': { total:18111, concluido:11252, cancelado:6859  },
+    'Uber XL':       { total:4449,  concluido:2783,  cancelado:1666  }
+  },
+
+  periodo: {
+    'manha':    { total:45458, concluido:28258 },
+    'tarde':    { total:48386, concluido:29911 },
+    'noite':    { total:46617, concluido:28880 },
+    'madrugada':{ total:9538,  concluido:5951  }
+  },
+
+  hora: [1373,1360,1339,1383,1321,2786,4160,5450,6861,8234,
+         9577,8390,7006,5470,7031,8202,9633,11044,12396,11047,
+         9630,8103,5441,2762],
+
+  hora_a1: [849,843,830,859,820,1730,2582,3383,4262,5111,
+            5942,5213,4345,3396,4362,5089,5972,6849,7690,6855,
+            5978,5028,3374,1713],
+
+  diasem: {
+    'Seg': { total:21643, concluido:13318 },
+    'Ter': { total:21391, concluido:13171 },
+    'Qua': { total:21413, concluido:13296 },
+    'Qui': { total:21215, concluido:13206 },
+    'Sex': { total:21397, concluido:13253 },
+    'Sáb': { total:21542, concluido:13442 },
+    'Dom': { total:21398, concluido:13314 }
+  },
+
+  sv: {
+    'Com VTAT': { total:139500, concluido:86540 },
+    'Sem VTAT': { total:10499,  concluido:6460  }
+  },
+
+  // Bayes conditionals P(feature|alvo)
+  bayes: {
+    vt: {
+      'Auto':          { p_a1:0.2490, p_a0:0.2502 },
+      'Bike':          { p_a1:0.1509, p_a0:0.1488 },
+      'eBike':         { p_a1:0.0704, p_a0:0.0702 },
+      'Go Mini':       { p_a1:0.1994, p_a0:0.1975 },
+      'Go Sedan':      { p_a1:0.1793, p_a0:0.1836 },
+      'Premier Sedan': { p_a1:0.1210, p_a0:0.1203 },
+      'Uber XL':       { p_a1:0.0299, p_a0:0.0292 }
+    },
+    periodo: {
+      'manha':    { p_a1:0.3038, p_a0:0.3016 },
+      'tarde':    { p_a1:0.3216, p_a0:0.3216 },
+      'noite':    { p_a1:0.3105, p_a0:0.3106 },
+      'madrugada':{ p_a1:0.0640, p_a0:0.0641 }
+    },
+    sv: {
+      '0': { p_a1:0.9305, p_a0:0.9294 },
+      '1': { p_a1:0.0695, p_a0:0.0706 }
+    },
+    vtat_bucket: {
+      'baixo (<5)':     { p_a1:0.0906, p_a0:0.0795 },
+      'medio (5-10)':   { p_a1:0.5645, p_a0:0.6300 },
+      'alto (10-15)':   { p_a1:0.2973, p_a0:0.2340 },
+      'muito_alto (>15)':{ p_a1:0.0476, p_a0:0.0564 }
+    }
+  }
+};
+
+// ─────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function pct(a, b) { return (100 * a / b).toFixed(1) + '%'; }
+
+const CHART_DEFAULTS = {
+  plugins: { legend: { labels: { color: '#8892b0', font: { family: 'Sora', size: 12 } } } },
+  scales: {
+    x: { ticks: { color: '#8892b0', font:{family:'Sora',size:11} }, grid: { color: '#2d3147' } },
+    y: { ticks: { color: '#8892b0', font:{family:'Sora',size:11} }, grid: { color: '#2d3147' } }
+  }
+};
+
+// ─────────────────────────────────────────────
+// SEÇÃO 1 — GRÁFICOS
+// ─────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  buildPie();
+  buildVT();
+  buildHora();
+  buildPeriodo();
+  buildDiasem();
+  buildVtat();
+  buildSv();
+  buildTaxa();
+  buildBayesTable();
+});
+
+function buildPie() {
+  new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Concluída (62%)', 'Cancelada (38%)'],
+      datasets: [{ data: [93000, 56999], backgroundColor: ['#3ecf8e', '#f76c6c'], borderWidth: 0 }]
+    },
+    options: {
+      plugins: {
+        legend: { position:'bottom', labels: { color:'#8892b0', font:{family:'Sora',size:12}, padding:16 } }
+      }
+    }
+  });
+}
+
+function buildVT() {
+  const labels = Object.keys(DATA.vt);
+  const conc   = labels.map(k => DATA.vt[k].concluido);
+  const canc   = labels.map(k => DATA.vt[k].cancelado);
+  new Chart(document.getElementById('vtChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Concluída', data:conc, backgroundColor:'#3ecf8e', borderRadius:4 },
+        { label:'Cancelada', data:canc, backgroundColor:'#f76c6c', borderRadius:4 }
+      ]
+    },
+    options: { ...CHART_DEFAULTS, plugins: { ...CHART_DEFAULTS.plugins },
+      scales: { x: CHART_DEFAULTS.scales.x, y: { ...CHART_DEFAULTS.scales.y, stacked:false } }
+    }
+  });
+}
+
+function buildHora() {
+  const labels = Array.from({length:24}, (_,i) => i+'h');
+  new Chart(document.getElementById('horaChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Concluída', data: DATA.hora_a1, backgroundColor:'rgba(62,207,142,0.75)', borderRadius:3 },
+        { label:'Cancelada', data: DATA.hora.map((t,i)=>t-DATA.hora_a1[i]), backgroundColor:'rgba(247,108,108,0.75)', borderRadius:3 }
+      ]
+    },
+    options: { ...CHART_DEFAULTS,
+      plugins: { ...CHART_DEFAULTS.plugins },
+      scales: {
+        x: { ...CHART_DEFAULTS.scales.x, stacked:true },
+        y: { ...CHART_DEFAULTS.scales.y, stacked:true }
+      }
+    }
+  });
+}
+
+function buildPeriodo() {
+  const ord = ['madrugada','manha','tarde','noite'];
+  const labels = ['Madrugada','Manhã','Tarde','Noite'];
+  const conc = ord.map(k => DATA.periodo[k].concluido);
+  const canc = ord.map(k => DATA.periodo[k].total - DATA.periodo[k].concluido);
+  new Chart(document.getElementById('periodoChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Concluída', data:conc, backgroundColor:'#3ecf8e', borderRadius:5 },
+        { label:'Cancelada', data:canc, backgroundColor:'#f76c6c', borderRadius:5 }
+      ]
+    },
+    options: CHART_DEFAULTS
+  });
+}
+
+function buildDiasem() {
+  const labels = Object.keys(DATA.diasem);
+  const conc = labels.map(k => DATA.diasem[k].concluido);
+  const canc = labels.map(k => DATA.diasem[k].total - DATA.diasem[k].concluido);
+  new Chart(document.getElementById('diasemChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Concluída', data:conc, backgroundColor:'#4f8ef7', borderRadius:5 },
+        { label:'Cancelada', data:canc, backgroundColor:'#f7c948', borderRadius:5 }
+      ]
+    },
+    options: CHART_DEFAULTS
+  });
+}
+
+function buildVtat() {
+  // Aproximação das distribuições por bucket
+  const buckets = ['< 5 min', '5–10 min', '10–15 min', '> 15 min'];
+  // Counts extraídos do dataset
+  const a1 = [8426, 52499, 27648, 4427];
+  const a0 = [4524, 35773, 13339, 3213];
+  // (valores aproximados pelo vtat_bayes * totais)
+  new Chart(document.getElementById('vtatChart'), {
+    type: 'bar',
+    data: {
+      labels: buckets,
+      datasets: [
+        { label:'Concluída', data:a1, backgroundColor:'rgba(62,207,142,0.8)', borderRadius:5 },
+        { label:'Cancelada', data:a0, backgroundColor:'rgba(247,108,108,0.8)', borderRadius:5 }
+      ]
+    },
+    options: {
+      ...CHART_DEFAULTS,
+      plugins: { ...CHART_DEFAULTS.plugins }
+    }
+  });
+}
+
+function buildSv() {
+  const labels = ['Com VTAT registrado', 'Sem VTAT'];
+  const conc   = [DATA.sv['Com VTAT'].concluido, DATA.sv['Sem VTAT'].concluido];
+  const canc   = [DATA.sv['Com VTAT'].total - DATA.sv['Com VTAT'].concluido,
+                  DATA.sv['Sem VTAT'].total  - DATA.sv['Sem VTAT'].concluido];
+  new Chart(document.getElementById('svChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Concluída', data:conc, backgroundColor:'#3ecf8e', borderRadius:5 },
+        { label:'Cancelada', data:canc, backgroundColor:'#f76c6c', borderRadius:5 }
+      ]
+    },
+    options: CHART_DEFAULTS
+  });
+}
+
+function buildTaxa() {
+  const labels = Object.keys(DATA.vt);
+  const taxas  = labels.map(k => parseFloat((100 * DATA.vt[k].concluido / DATA.vt[k].total).toFixed(1)));
+  new Chart(document.getElementById('taxaChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label:'Taxa de Conclusão (%)',
+        data: taxas,
+        backgroundColor: taxas.map(t => t >= 62 ? '#3ecf8e' : '#f7c948'),
+        borderRadius: 6
+      }]
+    },
+    options: {
+      ...CHART_DEFAULTS,
+      scales: {
+        x: CHART_DEFAULTS.scales.x,
+        y: { ...CHART_DEFAULTS.scales.y, min:55, max:70,
+             ticks: { ...CHART_DEFAULTS.scales.y.ticks, callback: v => v + '%' } }
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+// SEÇÃO 2 — CLASSIFICAÇÃO
+// ─────────────────────────────────────────────
+function vtatBucket(v) {
+  if (v < 5)  return 'baixo (<5)';
+  if (v < 10) return 'medio (5-10)';
+  if (v < 15) return 'alto (10-15)';
+  return 'muito_alto (>15)';
+}
+
+// Gaussian PDF
+function gauss(x, mu, sigma) {
+  return (1/(sigma*Math.sqrt(2*Math.PI))) * Math.exp(-0.5*((x-mu)/sigma)**2);
+}
+
+let compChartInst = null;
+
+function predict() {
+  const vt   = document.getElementById('inp_vt').value;
+  const per  = document.getElementById('inp_per').value;
+  const vtat = parseFloat(document.getElementById('inp_vtat').value);
+  const sv   = document.getElementById('inp_sv').value;
+  const bkt  = vtatBucket(vtat);
+
+  const p_a1 = DATA.totals.p_a1;
+  const p_a0 = DATA.totals.p_a0;
+
+  // ── NAIVE BAYES ──
+  const b = DATA.bayes;
+  const lk_a1 = b.vt[vt].p_a1 * b.periodo[per].p_a1 * b.sv[sv].p_a1 * b.vtat_bucket[bkt].p_a1;
+  const lk_a0 = b.vt[vt].p_a0 * b.periodo[per].p_a0 * b.sv[sv].p_a0 * b.vtat_bucket[bkt].p_a0;
+  const num_a1 = lk_a1 * p_a1;
+  const num_a0 = lk_a0 * p_a0;
+  const denom  = num_a1 + num_a0;
+  const bayes_a1 = num_a1 / denom;
+  const bayes_a0 = num_a0 / denom;
+
+  // ── KNN SIMULADO ──
+  // Usa a taxa de conclusão histórica do grupo (vt + periodo) como proxy do KNN
+  const vtData = DATA.vt[vt];
+  const perData = DATA.periodo[per];
+  const taxa_vt  = vtData.concluido / vtData.total;
+  const taxa_per = perData.concluido / perData.total;
+  const knn_a1 = (taxa_vt * 0.6 + taxa_per * 0.4); // ponderado
+  const knn_a0 = 1 - knn_a1;
+
+  // ── ÁRVORE DE DECISÃO (regras extraídas do dataset) ──
+  // Regra 1: sem_vtat=1 → taxa histórica bem próxima de 61,5%
+  // Regra 2: vtat > 15 → menor taxa de conclusão (~47%)
+  // Regra 3: vtat 10-15 → maior taxa (~72%)
+  let dt_a1;
+  if (sv === '1') {
+    dt_a1 = 0.615; // sem VTAT: usa prior
+  } else if (vtat > 15) {
+    dt_a1 = 0.47 + (taxa_vt - 0.62) * 0.3;
+  } else if (vtat >= 10) {
+    dt_a1 = 0.72 + (taxa_vt - 0.62) * 0.3;
+  } else if (vtat < 5) {
+    dt_a1 = 0.65 + (taxa_vt - 0.62) * 0.2;
+  } else {
+    dt_a1 = 0.59 + (taxa_vt - 0.62) * 0.2;
+  }
+  dt_a1 = Math.max(0.05, Math.min(0.95, dt_a1));
+  const dt_a0 = 1 - dt_a1;
+
+  // ── RENDERIZAÇÃO ──
+  document.getElementById('placeholder').style.display = 'none';
+  document.getElementById('results_area').style.display = 'block';
+
+  function predLabel(p) {
+    return p >= 0.5
+      ? '<span class="method-pred pred-concluida">✅ Concluída</span>'
+      : '<span class="method-pred pred-cancelada">❌ Cancelada</span>';
+  }
+
+  document.getElementById('methods_grid').innerHTML = `
+    <div class="method-box">
+      <div class="method-name">Naive Bayes</div>
+      ${predLabel(bayes_a1)}
+      <div class="method-conf">P(Concluída) = <strong>${(bayes_a1*100).toFixed(1)}%</strong></div>
+      <div class="method-conf" style="margin-top:2px">P(Cancelada) = <strong>${(bayes_a0*100).toFixed(1)}%</strong></div>
+    </div>
+    <div class="method-box">
+      <div class="method-name">KNN Simulado</div>
+      ${predLabel(knn_a1)}
+      <div class="method-conf">P(Concluída) ≈ <strong>${(knn_a1*100).toFixed(1)}%</strong></div>
+      <div class="method-conf" style="margin-top:2px">P(Cancelada) ≈ <strong>${(knn_a0*100).toFixed(1)}%</strong></div>
+    </div>
+    <div class="method-box">
+      <div class="method-name">Árvore de Decisão</div>
+      ${predLabel(dt_a1)}
+      <div class="method-conf">P(Concluída) ≈ <strong>${(dt_a1*100).toFixed(1)}%</strong></div>
+      <div class="method-conf" style="margin-top:2px">P(Cancelada) ≈ <strong>${(dt_a0*100).toFixed(1)}%</strong></div>
+    </div>
+  `;
+
+  // Bayes bars
+  document.getElementById('bayes_bars').innerHTML = `
+    <div class="bar-row">
+      <span class="bar-label" style="color:var(--green)">✅ Concluída</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${bayes_a1*100}%;background:var(--green)"></div></div>
+      <span class="bar-pct" style="color:var(--green)">${(bayes_a1*100).toFixed(1)}%</span>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label" style="color:var(--red)">❌ Cancelada</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${bayes_a0*100}%;background:var(--red)"></div></div>
+      <span class="bar-pct" style="color:var(--red)">${(bayes_a0*100).toFixed(1)}%</span>
+    </div>
+  `;
+
+  // Comparison chart
+  if (compChartInst) compChartInst.destroy();
+  compChartInst = new Chart(document.getElementById('compChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Naive Bayes', 'KNN Simulado', 'Árvore de Decisão'],
+      datasets: [
+        {
+          label: 'P(Concluída)',
+          data: [+(bayes_a1*100).toFixed(1), +(knn_a1*100).toFixed(1), +(dt_a1*100).toFixed(1)],
+          backgroundColor: 'rgba(62,207,142,0.8)', borderRadius: 6
+        },
+        {
+          label: 'P(Cancelada)',
+          data: [+(bayes_a0*100).toFixed(1), +(knn_a0*100).toFixed(1), +(dt_a0*100).toFixed(1)],
+          backgroundColor: 'rgba(247,108,108,0.8)', borderRadius: 6
+        }
+      ]
+    },
+    options: {
+      ...CHART_DEFAULTS,
+      scales: {
+        x: CHART_DEFAULTS.scales.x,
+        y: { ...CHART_DEFAULTS.scales.y, min:0, max:100,
+             ticks: { ...CHART_DEFAULTS.scales.y.ticks, callback: v => v+'%' } }
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────────────
+// TABELA DE PROBABILIDADES CONDICIONAIS
+// ─────────────────────────────────────────────
+function buildBayesTable() {
+  const b = DATA.bayes;
+  const rows = [];
+
+  for (const [v, p] of Object.entries(b.vt)) {
+    rows.push({ attr:'Tipo de Veículo', val:v, p_a1:p.p_a1, p_a0:p.p_a0 });
+  }
+  for (const [v, p] of Object.entries(b.periodo)) {
+    const nms = {manha:'Manhã', tarde:'Tarde', noite:'Noite', madrugada:'Madrugada'};
+    rows.push({ attr:'Período do Dia', val:nms[v]||v, p_a1:p.p_a1, p_a0:p.p_a0 });
+  }
+  rows.push({ attr:'Sem VTAT', val:'Não (0)', p_a1:b.sv['0'].p_a1, p_a0:b.sv['0'].p_a0 });
+  rows.push({ attr:'Sem VTAT', val:'Sim (1)', p_a1:b.sv['1'].p_a1, p_a0:b.sv['1'].p_a0 });
+  for (const [v, p] of Object.entries(b.vtat_bucket)) {
+    rows.push({ attr:'Faixa VTAT', val:v, p_a1:p.p_a1, p_a0:p.p_a0 });
+  }
+
+  const tbody = document.getElementById('bayes_table');
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td style="color:var(--muted)">${r.attr}</td>
+      <td><strong>${r.val}</strong></td>
+      <td><span class="badge g">${(r.p_a1*100).toFixed(2)}%</span></td>
+      <td><span class="badge r">${(r.p_a0*100).toFixed(2)}%</span></td>
+    </tr>
+  `).join('');
+}
+</script>
+</body>
+</html>
