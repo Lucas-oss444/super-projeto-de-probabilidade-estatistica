@@ -18,6 +18,9 @@ Thumbs.db
 # Streamlit
 .streamlit/secrets.toml
 
+# Relatório (documento Word — não faz parte do código)
+relatorio/
+
 # Credenciais (nunca versionar tokens)
 *.token
 .env

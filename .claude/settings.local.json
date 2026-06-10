@@ -13,7 +13,10 @@
       "Bash(git push *)",
       "Bash(python -c ' *)",
       "Bash(winget upgrade *)",
-      "PowerShell(winget upgrade *)"
+      "PowerShell(winget upgrade *)",
+      "PowerShell(& \"C:\\\\Users\\\\Lucas\\\\Documents\\\\projeto-uber\\\\.venv\\\\Scripts\\\\python.exe\" -c \"import docx; print\\('ok'\\)\" 2>&1)",
+      "PowerShell(& \"C:\\\\Users\\\\Lucas\\\\Documents\\\\projeto-uber\\\\.venv\\\\Scripts\\\\pip.exe\" install python-docx -q)",
+      "PowerShell(& \"C:\\\\Users\\\\Lucas\\\\Documents\\\\projeto-uber\\\\.venv\\\\Scripts\\\\python.exe\" \"C:\\\\Users\\\\Lucas\\\\Documents\\\\projeto-uber\\\\relatorio\\\\gerar_relatorio.py\")"
     ]
   }
 }

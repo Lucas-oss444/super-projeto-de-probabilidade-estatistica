@@ -38,8 +38,6 @@ projeto-uber/
 ├── notebooks/       # notebooks de limpeza, EDA, Bayes e classificação
 ├── src/             # funções reutilizáveis (.py)
 ├── dashboard/       # aplicação do dashboard interativo
-├── relatorio/       # relatório técnico e declaração de uso de IA
-├── PLANO_DE_TRATAMENTO.md
 ├── requirements.txt
 ├── .gitignore
 └── README.md
@@ -71,30 +69,14 @@ Notebooks (ordem recomendada):
 Dashboard (local):
 
 ```
-streamlit run dashboard/app.py
+go live app.html
 ```
 
 ## Equipe e divisão de tarefas
 
-| Integrante | Responsabilidade principal | Entregas |
-|------------|----------------------------|----------|
-| Integrante 1 | Tratamento e limpeza dos dados | Notebook 01 + seção de tratamentos do relatório |
-| Integrante 2 | Análise exploratória e Seção 1 do dashboard | Notebook 02 + visualizações |
-| Integrante 3 | Teorema de Bayes, classificadores e Seção 2 do dashboard | Notebooks 03 e 04 + comparação dos métodos |
+| Integrante      | Github                          |
+|-----------------|---------------------------------|
+| Lucas Jatene    | https://github.com/Lucas-oss444 |
+| Gustavo alencar |https://github.com/Galencar14    |
+| Cauê Milhomem   |https://github.com/caueroc       |
 
-Observação: a arguição é individual. Cada integrante deve dominar o projeto
-inteiro, não apenas a própria parte. Recomenda-se que cada um faça os próprios
-commits, para que o histórico do GitHub reflita a contribuição de todos.
-
-## Entregas (conforme o enunciado)
-
-- [ ] Nome completo de todos os integrantes
-- [ ] Link do repositório GitHub com README
-- [ ] Link do dataset (fonte original)
-- [ ] Relatório técnico (`relatorio/`)
-- [ ] Declaração de uso de IA generativa (`relatorio/DECLARACAO_IA.md`)
-
-## Declaração de uso de IA generativa
-
-A declaração obrigatória está em `relatorio/DECLARACAO_IA.md` e deve ser
-preenchida de forma honesta pela equipe.
